@@ -45,6 +45,10 @@ public class TermsRepository {
         this.database.getCollection(COLLECTION).insertMany(documents);
     }
 
+    public void removeTerm(@NotNull TranslationTerm term) {
+        this.database.getCollection(COLLECTION).deleteOne(Filters.eq("key", term.getKey()));
+    }
+
     public boolean isTermCreated(@NotNull System key) {
         return this.database.getCollection(COLLECTION).countDocuments(Filters.eq("key", key)) > 1;
     }

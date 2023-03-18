@@ -1,4 +1,4 @@
-package eu.mizerak.alemiz.translationlib.service.utils;
+package eu.mizerak.alemiz.translationlib.common.utils;
 
 import lombok.Builder;
 

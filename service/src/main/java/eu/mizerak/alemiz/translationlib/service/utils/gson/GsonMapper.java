@@ -1,4 +1,4 @@
-package eu.mizerak.alemiz.translationlib.service.utils;
+package eu.mizerak.alemiz.translationlib.service.utils.gson;
 
 import com.google.gson.Gson;
 import io.javalin.json.JsonMapper;

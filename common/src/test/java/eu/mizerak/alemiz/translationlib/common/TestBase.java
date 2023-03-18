@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 @Getter
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -23,9 +24,15 @@ public abstract class TestBase {
 
     @BeforeAll
     public void init() {
-        this.loader = TranslationLibLoader.builder()
+        this.loader = LoaderSettings.builder()
                 .defaultLocale(Locale.ENGLISH)
-                .build();
+                .serverAddress("http://0.0.0.0:7080")
+                .serverToken("my_secret_token")
+                .refreshTask(-1, TimeUnit.SECONDS) // disable refreshing
+                .termUpdates(false)
+                .aggressiveUpdates(false)
+                .createLoader();
+
         TranslationLibLoader.setDefault(loader);
 
         LocalString.registerContextFactory(User.class, (TranslationContext.Factory<User>) (object, string) -> new TranslationContext<User>(object, string) {
@@ -57,5 +64,9 @@ public abstract class TestBase {
     public void registerFormatter(StringFormatter formatter) {
         this.formatters.add(formatter);
         LocalString.registerFormatter(formatter);
+    }
+
+    public TranslationLibLoader loader() {
+        return this.loader;
     }
 }

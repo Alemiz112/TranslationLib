@@ -1,5 +1,6 @@
 package eu.mizerak.alemiz.translationlib.service.utils;
 
+import eu.mizerak.alemiz.translationlib.common.utils.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.Executors;

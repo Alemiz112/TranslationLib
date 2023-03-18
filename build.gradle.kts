@@ -3,12 +3,13 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.0"
 }
 
-group = "eu.mizerak.alemiz.translationlib"
-version = "1.0-SNAPSHOT"
-
 subprojects {
+    apply(plugin = "java")
     apply(plugin = "java-library")
     apply(plugin = "com.github.johnrengelman.shadow")
+
+    group = "eu.mizerak.alemiz.translationlib"
+    version = "1.0-SNAPSHOT"
 
     repositories {
         mavenLocal()
@@ -16,14 +17,15 @@ subprojects {
     }
 
     dependencies {
-        compileOnly("org.projectlombok", "lombok", "1.18.26")
-        annotationProcessor("org.projectlombok", "lombok", "1.18.26")
-        testCompileOnly("org.projectlombok", "lombok", "1.18.26")
-        testAnnotationProcessor("org.projectlombok", "lombok", "1.18.26")
+        compileOnly(rootProject.libs.lombok)
+        implementation(rootProject.libs.slf4j.api)
+        implementation(rootProject.libs.gson)
 
-        implementation("org.slf4j", "slf4j-api", "2.0.6")
-        implementation("com.google.code.gson:gson:2.10.1")
+        annotationProcessor(rootProject.libs.lombok)
 
+        // Tests
+        testCompileOnly(rootProject.libs.lombok)
+        testAnnotationProcessor(rootProject.libs.lombok)
     }
 
     tasks.withType<JavaCompile> {

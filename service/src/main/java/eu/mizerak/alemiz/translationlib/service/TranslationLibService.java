@@ -9,13 +9,16 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import eu.mizerak.alemiz.translationlib.common.gson.LocaleSerializer;
-import eu.mizerak.alemiz.translationlib.common.structure.TranslationTerm;
+import eu.mizerak.alemiz.translationlib.common.structure.RestStatus;
 import eu.mizerak.alemiz.translationlib.service.access.AccessRole;
 import eu.mizerak.alemiz.translationlib.service.manager.TermsManager;
 import eu.mizerak.alemiz.translationlib.service.scrappers.TranslationDataScrapper;
 import eu.mizerak.alemiz.translationlib.service.utils.Configuration;
-import eu.mizerak.alemiz.translationlib.service.utils.GsonMapper;
+import eu.mizerak.alemiz.translationlib.service.utils.gson.BundledDataSerializer;
+import eu.mizerak.alemiz.translationlib.service.utils.gson.DataCollectionTypeAdapterFactory;
+import eu.mizerak.alemiz.translationlib.service.utils.gson.GsonMapper;
 import io.avaje.http.api.WebRoutes;
+import io.avaje.http.client.HttpException;
 import io.avaje.inject.BeanScope;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -24,8 +27,6 @@ import io.javalin.http.HttpStatus;
 import io.javalin.security.RouteRole;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.ConnectionPool;
-import okhttp3.OkHttpClient;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,8 +82,6 @@ public class TranslationLibService {
     private final MongoClient mongoClient;
     private final MongoDatabase mongoDatabase;
 
-    private final OkHttpClient httpClient;
-
     private final TranslationDataScrapper scrapper;
     private final TermsManager termsManager;
 
@@ -101,14 +100,10 @@ public class TranslationLibService {
         this.mongoClient = MongoClients.create(settings);
         this.mongoDatabase = mongoClient.getDatabase(configuration.getMongoDatabase());
 
-        OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        builder.readTimeout(15, TimeUnit.SECONDS);
-        builder.retryOnConnectionFailure(true);
-        builder.connectionPool(new ConnectionPool(10, 5, TimeUnit.MINUTES));
-        this.httpClient = builder.build();
-
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(Locale.class, new LocaleSerializer())
+                .registerTypeAdapterFactory(new DataCollectionTypeAdapterFactory())
+                .registerTypeAdapterFactory(new BundledDataSerializer())
                 .setFieldNamingStrategy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
                 .create();
 
@@ -117,7 +112,6 @@ public class TranslationLibService {
                 .bean(Configuration.class, configuration)
                 .bean(MongoClient.class, this.mongoClient)
                 .bean(MongoDatabase.class, this.mongoDatabase)
-                .bean(OkHttpClient.class, this.httpClient)
                 .bean(Gson.class, this.gson)
                 .build();
 
@@ -141,20 +135,28 @@ public class TranslationLibService {
         this.server.get("/", ctx -> ctx.result("Hello World"));
         this.server.routes(() -> scope.list(WebRoutes.class).forEach(WebRoutes::registerRoutes));
 
+        this.server.exception(HttpException.class, (e, ctx) -> {
+            // Handle general http exceptions
+            ctx.json(RestStatus.create(RestStatus.Status.ERROR, e.getClass().getSimpleName(), e.getMessage() + ": " + e.bodyAsString()));
+            log.error("Exception in route {}: status={} msg={}", ctx.url(), e.statusCode(), e.bodyAsString(), e);
+        });
+
+        this.server.exception(Exception.class, (e, ctx) -> {
+            ctx.json(RestStatus.create(e));
+            log.error("Exception in route {}", ctx.url(), e);
+        });
+
         // Start server
         this.server.start(configuration.getHttpHost(), configuration.getHttpPort());
 
-        Runtime.getRuntime().addShutdownHook(new Thread(){
-            @Override
-            public void run() {
-                server.stop();
-                scope.close();
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            server.stop();
+            scope.close();
+        }));
     }
 
     private void accessManager(Handler handler, Context ctx, Set<? extends RouteRole> routeRoles) throws Exception {
-        String authToken = ctx.header("Authorization");
+        String authToken = ctx.header("auth");
         AccessRole role;
         if (authToken == null || authToken.trim().isEmpty() || !this.configuration.getAccessTokens().contains(authToken)) {
             role = AccessRole.PUBLIC;
@@ -165,7 +167,7 @@ public class TranslationLibService {
         if (routeRoles.isEmpty() || routeRoles.contains(role)) {
             handler.handle(ctx);
         } else {
-            ctx.status(HttpStatus.UNAUTHORIZED).json("Unauthorized");
+            ctx.status(HttpStatus.UNAUTHORIZED).result("Unauthorized");
         }
     }
 }

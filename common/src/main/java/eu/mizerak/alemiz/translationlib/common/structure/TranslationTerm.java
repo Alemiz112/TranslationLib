@@ -7,6 +7,7 @@ import java.util.*;
 @Data
 public class TranslationTerm {
     private String key;
+    private String internalId;
     private Set<String> tags = new HashSet<>();
     private Map<Locale, String> translations = new HashMap<>();
 
