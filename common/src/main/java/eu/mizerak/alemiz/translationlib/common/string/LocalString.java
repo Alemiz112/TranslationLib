@@ -34,6 +34,9 @@ public class LocalString<T> {
     private final TranslationLibLoader loader;
 
     @Getter
+    private final String fallbackMessage;
+
+    @Getter
     private TranslationTerm term;
     private final Map<Locale, String> formatted = new ConcurrentHashMap<>();
 
@@ -53,19 +56,15 @@ public class LocalString<T> {
             if (text == null) {
                 throw new IllegalStateException("Term " + key + " has no default translation");
             }
-
-            if (!defaultText.equals(text)) {
-                term = TranslationTerm.createEmpty(key, defaultText, loader.getDefaultLocale());
-                loader.addTermUpdate(term);
-            }
         }
-        return new LocalString<>(key, term, loader);
+        return new LocalString<>(key, term, loader, defaultText);
     }
 
-    private LocalString(String key, TranslationTerm term, TranslationLibLoader loader) {
+    private LocalString(String key, TranslationTerm term, TranslationLibLoader loader, String fallbackMessage) {
         this.key = key;
         this.loader = loader;
         this.term = term;
+        this.fallbackMessage = fallbackMessage;
         this.enableReload(true);
     }
 
@@ -135,7 +134,7 @@ public class LocalString<T> {
         }
 
         String text = term.getText(locale);
-        if (text == null) {
+        if (text == null || text.trim().isEmpty()) {
             text = term.getText(loader.getDefaultLocale());
         }
 
@@ -148,7 +147,10 @@ public class LocalString<T> {
             text = formatter.format(text);
         }
         return text;
+    }
 
+    public void uploadFallbackMessage() {
+        this.loader.addTermUpdate(TranslationTerm.createEmpty(key, this.fallbackMessage, loader.getDefaultLocale()));
     }
 
     @Override

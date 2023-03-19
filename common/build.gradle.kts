@@ -34,4 +34,5 @@ publishing {
             from(components.getByName("java"))
         }
     }
+
 }

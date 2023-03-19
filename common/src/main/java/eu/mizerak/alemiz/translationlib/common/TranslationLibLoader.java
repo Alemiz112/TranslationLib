@@ -141,6 +141,10 @@ public class TranslationLibLoader {
         return Collections.unmodifiableCollection(this.translationTerms.values());
     }
 
+    public Collection<LocalString<?>> getActiveStrings() {
+        return Collections.unmodifiableCollection(this.activeStrings);
+    }
+
     public TranslationLibRestApi getTranslationLibRestApi() {
         return this.restClient.getApi();
     }
