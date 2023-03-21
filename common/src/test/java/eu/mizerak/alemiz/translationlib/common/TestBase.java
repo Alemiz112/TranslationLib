@@ -1,6 +1,6 @@
 package eu.mizerak.alemiz.translationlib.common;
 
-import eu.mizerak.alemiz.translationlib.common.string.LocalString;
+import eu.mizerak.alemiz.translationlib.common.string.LocalStringBase;
 import eu.mizerak.alemiz.translationlib.common.string.StringFormatter;
 import eu.mizerak.alemiz.translationlib.common.string.TranslationContext;
 import eu.mizerak.alemiz.translationlib.common.structure.TranslationTerm;
@@ -35,7 +35,7 @@ public abstract class TestBase {
 
         TranslationLibLoader.setDefault(loader);
 
-        LocalString.registerContextFactory(User.class, (TranslationContext.Factory<User>) (object, string) -> new TranslationContext<User>(object, string) {
+        LocalStringBase.registerContextFactory(User.class, (TranslationContext.Factory<User>) (object) -> new TranslationContext<>(object) {
             @Override
             public Locale getLocale() {
                 return this.getObject().getLocale();
@@ -45,7 +45,7 @@ public abstract class TestBase {
 
     @AfterEach
     public void finish() {
-        this.formatters.forEach(LocalString::unregisterFormatter);
+        this.formatters.forEach(LocalStringBase::unregisterFormatter);
     }
 
     public TranslationTerm addTerm(String key, String tag, Locale locale, String translation) {
@@ -63,7 +63,7 @@ public abstract class TestBase {
 
     public void registerFormatter(StringFormatter formatter) {
         this.formatters.add(formatter);
-        LocalString.registerFormatter(formatter);
+        LocalStringBase.registerFormatter(formatter);
     }
 
     public TranslationLibLoader loader() {

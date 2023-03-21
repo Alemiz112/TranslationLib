@@ -42,7 +42,7 @@ public class TranslationLibLoader {
     private final Map<String, TranslationTerm> translationTerms = new ConcurrentHashMap<>();
     private final Set<LocalString<?>> activeStrings = Collections.synchronizedSet(new HashSet<>());
     private final Set<String> loadedTags = Collections.synchronizedSet(new HashSet<>());
-    private final List<TranslationTerm> updateQueue = Collections.synchronizedList(new ArrayList<>());
+    private final Set<TranslationTerm> updateQueue = Collections.synchronizedSet(new HashSet<>());
 
     private ScheduledFuture<?> refreshFuture;
 
@@ -56,17 +56,8 @@ public class TranslationLibLoader {
     }
 
     public void refresh() {
-        List<TranslationTerm> terms = new ArrayList<>(this.updateQueue);
+        this.sendTermUpdates();
         try {
-            for (TranslationTerm term : terms) {
-                RestStatus status = this.getTranslationLibRestApi().termUpdate(term, this.settings.aggressiveUpdates());
-                if (status.isSuccess()) {
-                    this.updateQueue.clear();
-                } else {
-                    log.warn("Service responded to an update with error: {} cause={}", status.getMessage(), status.getError());
-                }
-            }
-
             this.loadTermsByTag(new HashSet<>(this.loadedTags));
             this.refreshStrings();
         } catch (HttpException e) {
@@ -76,13 +67,35 @@ public class TranslationLibLoader {
         }
     }
 
+    public void sendTermUpdates() {
+        try {
+            List<TranslationTerm> terms = new ArrayList<>(this.updateQueue);
+            for (TranslationTerm term : terms) {
+                RestStatus status = this.getTranslationLibRestApi().termUpdate(term, this.settings.aggressiveUpdates());
+                if (status.isSuccess()) {
+                    this.updateQueue.remove(term);
+                } else {
+                    log.warn("Service responded to an update with error: {} cause={}", status.getMessage(), status.getError());
+                }
+            }
+        } catch (HttpException e) {
+            log.error("Exception caught while sending term updates: {}", e.statusCode(), e);
+        } catch (Exception e) {
+            log.error("Exception caught while updating translations", e);
+        }
+    }
+
     public void loadTermsByTag(Collection<String> tags) {
         this.clearAllTerms();
         for (String tag : tags) {
             log.info("Loading terms with tag {}...", tag);
-            Collection<TranslationTerm> terms = Arrays.asList(this.getTranslationLibRestApi().exportTerms(tag));
-            this.loadTerms(terms, false);
-            this.loadedTags.add(tag);
+            try {
+                TranslationTerm[] terms = this.getTranslationLibRestApi().exportTerms(tag);
+                this.loadTerms(Arrays.asList(terms), false);
+                this.loadedTags.add(tag);
+            } catch (HttpException e) {
+                throw new IllegalStateException("Failed to load terms with tag " + tag, e);
+            }
         }
     }
 

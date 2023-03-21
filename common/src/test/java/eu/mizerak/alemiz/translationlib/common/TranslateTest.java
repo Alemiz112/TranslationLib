@@ -6,7 +6,6 @@ import eu.mizerak.alemiz.translationlib.common.structure.TranslationTerm;
 import eu.mizerak.alemiz.translationlib.common.structure.User;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -18,7 +17,7 @@ public class TranslateTest extends TestBase {
         this.registerFormatter(new SimpleColorFormatter());
 
         LocalString<User> string = LocalString.from("test_string", "<!blue>Hello <!red>world!");
-        assertEquals("&bHello &cworld!", string.getTranslated(User.ENGLISH).getText());
+        assertEquals("&bHello &cworld!", string.getText(User.ENGLISH));
     }
 
     @Test
@@ -40,5 +39,18 @@ public class TranslateTest extends TestBase {
                 .withArgument("user", ctx -> ctx.getObject().getName());
 
         assertEquals("&bHello " + User.ENGLISH.getName(), string.getText(User.ENGLISH));
+    }
+
+    @Test
+    public void testStatic() {
+        LocalString<User> string = LocalString.<User>immutable("Hello {user}")
+                .withArgument("user", ctx -> ctx.getObject().getName());
+
+        assertEquals("Hello " + User.ENGLISH.getName(), string.getText(User.ENGLISH));
+
+        LocalString<User> string1 = LocalString.<User>immutable("Hi {user}")
+                .withArgument("user", ctx -> ctx.getObject().getName());
+
+        assertEquals("Hi " + User.ENGLISH.getName(), string1.getText(User.ENGLISH));
     }
 }

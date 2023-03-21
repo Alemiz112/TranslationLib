@@ -135,15 +135,17 @@ public class TranslationLibService {
         this.server.get("/", ctx -> ctx.result("Hello World"));
         this.server.routes(() -> scope.list(WebRoutes.class).forEach(WebRoutes::registerRoutes));
 
+        this.server.before("/*", ctx -> log.info("Accessed: {}, {}", ctx.req().getRequestURI(), ctx.method()));
+
         this.server.exception(HttpException.class, (e, ctx) -> {
             // Handle general http exceptions
             ctx.json(RestStatus.create(RestStatus.Status.ERROR, e.getClass().getSimpleName(), e.getMessage() + ": " + e.bodyAsString()));
-            log.error("Exception in route {}: status={} msg={}", ctx.url(), e.statusCode(), e.bodyAsString(), e);
+            log.error("Exception in route {}: status={} msg={}", ctx.req().getRequestURI(), e.statusCode(), e.bodyAsString(), e);
         });
 
         this.server.exception(Exception.class, (e, ctx) -> {
             ctx.json(RestStatus.create(e));
-            log.error("Exception in route {}", ctx.url(), e);
+            log.error("Exception in route {}", ctx.req().getRequestURI(), e);
         });
 
         // Start server

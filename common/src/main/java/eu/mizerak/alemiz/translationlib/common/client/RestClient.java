@@ -4,6 +4,7 @@ import eu.mizerak.alemiz.translationlib.common.TranslationLibLoader;
 import io.avaje.http.client.HttpClient;
 import io.avaje.http.client.HttpClientRequest;
 import io.avaje.http.client.RequestIntercept;
+import io.avaje.http.client.SimpleRetryHandler;
 import io.avaje.http.client.gson.GsonBodyAdapter;
 import lombok.RequiredArgsConstructor;
 
@@ -27,6 +28,7 @@ public class RestClient {
                         request.header("auth", token);
                     }
                 })
+                .retryHandler(new SimpleRetryHandler(3, 1000, 0))
                 .build();
     }
 
