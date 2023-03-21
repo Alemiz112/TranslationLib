@@ -35,4 +35,14 @@ publishing {
         }
     }
 
+    repositories {
+        maven {
+            name = "mznt-repo"
+            url = uri("https://repo.mznt.eu/snapshots")
+            credentials {
+                username = System.getenv("DEPLOY_USERNAME")
+                password = System.getenv("DEPLOY_PASSWORD")
+            }
+        }
+    }
 }
