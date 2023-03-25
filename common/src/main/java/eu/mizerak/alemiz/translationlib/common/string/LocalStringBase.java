@@ -80,7 +80,7 @@ public abstract class LocalStringBase<T> implements LocalString<T> {
                 formatted = formatted.replaceAll("\\{" + entry.getKey() + "\\}", entry.getValue().apply(ctx));
             }
         }
-        return formatted;
+        return ctx.handlePostFormat(formatted);
     }
 
     @Override
