@@ -1,6 +1,7 @@
 package eu.mizerak.alemiz.translationlib.common.string;
 
 import java.util.Locale;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class JoinLocalString<T> implements LocalString<T> {
@@ -60,8 +61,8 @@ public class JoinLocalString<T> implements LocalString<T> {
     }
 
     @Override
-    public String getText(T object) {
-        return this.left.getText(object) + this.delimiter + this.right.getText(object);
+    public String getText(T object, Consumer<TranslationContext<T>> handler) {
+        return this.left.getText(object, handler) + this.delimiter + this.right.getText(object, handler);
     }
 
     @Override

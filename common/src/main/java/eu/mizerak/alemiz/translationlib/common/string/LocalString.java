@@ -4,6 +4,7 @@ import eu.mizerak.alemiz.translationlib.common.TranslationLibLoader;
 import eu.mizerak.alemiz.translationlib.common.structure.TranslationTerm;
 
 import java.util.Locale;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public interface LocalString<T> {
@@ -59,7 +60,11 @@ public interface LocalString<T> {
 
     String getFormatted(Locale locale);
 
-    String getText(T object);
+    default String getText(T object) {
+        return this.getText(object, null);
+    }
+
+    String getText(T object, Consumer<TranslationContext<T>> handler);
 
     void uploadFallbackMessage();
 

@@ -1,6 +1,7 @@
 package eu.mizerak.alemiz.translationlib.common.string;
 
 import java.util.Locale;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -52,7 +53,7 @@ public class StringWrapper<T> implements LocalString<T> {
     }
 
     @Override
-    public String getText(T t) {
+    public String getText(T object, Consumer<TranslationContext<T>> handler) {
         return this.text;
     }
 

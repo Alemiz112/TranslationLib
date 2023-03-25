@@ -5,6 +5,7 @@ import lombok.Getter;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public abstract class LocalStringBase<T> implements LocalString<T> {
@@ -63,7 +64,7 @@ public abstract class LocalStringBase<T> implements LocalString<T> {
     }
 
     @Override
-    public String getText(T object) {
+    public String getText(T object, Consumer<TranslationContext<T>> handler) {
         TranslationContext.Factory<?> factory = contextFactories.get(object.getClass());
         if (factory == null) {
             factory = contextFactories.get(object.getClass().getSuperclass());
@@ -73,6 +74,9 @@ public abstract class LocalStringBase<T> implements LocalString<T> {
         }
 
         TranslationContext<T> ctx = ((TranslationContext.Factory<T>) factory).create(object);
+        if (handler != null) {
+            handler.accept(ctx);
+        }
 
         String formatted = this.getFormatted(ctx.getLocale());
         if (!this.arguments.isEmpty()) {
