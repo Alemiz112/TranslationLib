@@ -121,7 +121,7 @@ public class TermsRepository {
         try (PreparedStatement queryStatement = this.connection.prepareStatement("SELECT `key` FROM `terms` WHERE `key` = ?")) {
             queryStatement.setString(1, key);
             try (ResultSet query = queryStatement.executeQuery()) {
-                return query.getRow() > 0;
+                return query.next() && query.getRow() > 0;
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Unable check if term exists " + key, e);
