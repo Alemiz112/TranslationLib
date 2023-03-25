@@ -5,6 +5,7 @@ import eu.mizerak.alemiz.translationlib.common.structure.TranslationTerm;
 import eu.mizerak.alemiz.translationlib.service.scrappers.TranslationDataScrapper;
 import eu.mizerak.alemiz.translationlib.service.utils.Configuration;
 import io.avaje.http.client.HttpClient;
+import io.avaje.http.client.HttpClientResponse;
 import io.avaje.http.client.HttpException;
 import io.avaje.http.client.gson.GsonBodyAdapter;
 import io.avaje.inject.PostConstruct;
@@ -118,11 +119,10 @@ public class TraduoraScrapper implements TranslationDataScrapper {
         traduoraTerm = clientApi.addTerm(traduoraTerm, this.projectId);
 
         String termId = traduoraTerm.getId();
-        // for (Map.Entry<Locale, String> entry : term.getTranslations().entrySet()) {
-            // String locale = entry.getKey().getLanguage() + "_" + entry.getKey().getCountry();
-            // TODO: updating is broken :(
-            // clientApi.updateTermTranslation(new AddTranslationRequest(termId, entry.getValue()), this.projectId, locale);
-        // }
+        for (Map.Entry<Locale, String> entry : term.getTranslations().entrySet()) {
+            String locale = entry.getKey().getLanguage() + "_" + entry.getKey().getCountry();
+            clientApi.updateTermTranslation(new AddTranslationRequest(termId, entry.getValue()), this.projectId, locale);
+        }
         return termId;
     }
 

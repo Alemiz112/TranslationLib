@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class AddTranslationRequest {
+    @SerializedName("termId")
     private final String termId;
-    @SerializedName("value")
-    private final String text;
+    private final String value;
 }
