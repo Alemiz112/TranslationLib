@@ -18,8 +18,6 @@ import java.util.*;
 @Slf4j
 @Singleton
 public class TermsRepository {
-    public static final String COLLECTION = "terms";
-
     @Inject
     Configuration config;
 

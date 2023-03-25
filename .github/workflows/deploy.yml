@@ -1,24 +1,57 @@
 name: Gradle Build
 on:
+  workflow_dispatch:
   push:
     branches: ["master"]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'adopt-hotspot'
+
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
       - name: Build
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: wrapper
-          arguments: "publish"
+          arguments: "service:shadowJar publish"
         env:
           DEPLOY_USERNAME: ${{ secrets.DEPLOY_USERNAME }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+
+      - name: Log in
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
