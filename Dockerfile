@@ -1,4 +1,4 @@
-FROM openjdk:17-alpine
+FROM eclipse-temurin:17-jre-focal
 # Create workspace
 WORKDIR /usr/app
 # Add build application jar
