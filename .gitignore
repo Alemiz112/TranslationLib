@@ -75,3 +75,4 @@ service.properties
 
 common/src/main/generated/
 service/src/main/generated/
+*.db

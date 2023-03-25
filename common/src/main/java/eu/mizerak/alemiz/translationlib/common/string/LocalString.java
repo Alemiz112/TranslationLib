@@ -33,6 +33,14 @@ public interface LocalString<T> {
         return new StaticLocalString<>(term);
     }
 
+    static <T> LocalString<T> wrapper(String text) {
+        return new StringWrapper<>(text);
+    }
+
+    static <T> LocalString<T> empty() {
+        return (LocalString<T>) StringWrapper.EMPTY;
+    }
+
     String getKey();
 
     LocalString<T> reload();
@@ -54,4 +62,16 @@ public interface LocalString<T> {
     String getText(T object);
 
     void uploadFallbackMessage();
+
+    default LocalString<T> append(String string) {
+        return new JoinLocalString<>(this, LocalString.wrapper(string));
+    }
+
+    default LocalString<T> append(LocalString<T> string) {
+        return new JoinLocalString<>(this, string);
+    }
+
+    default LocalString<T> append(LocalString<T> string, String delimiter) {
+        return new JoinLocalString<>(this, string, delimiter);
+    }
 }

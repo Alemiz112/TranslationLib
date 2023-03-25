@@ -53,4 +53,14 @@ public class TranslateTest extends TestBase {
 
         assertEquals("Hi " + User.ENGLISH.getName(), string1.getText(User.ENGLISH));
     }
+
+    @Test
+    public void testJoinedStrings() {
+        LocalString<User> string = LocalString.<User>from("test_string4", "Hello {user}")
+                .withArgument("user", ctx -> ctx.getObject().getName());
+        LocalString<User> string2 = LocalString.immutable(" this is test");
+
+        String text = string.append(string2).getText(User.ENGLISH);
+        assertEquals("Hello " + User.ENGLISH.getName() + " this is test", text);
+    }
 }

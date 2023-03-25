@@ -9,7 +9,7 @@ group = "eu.mizerak.alemiz.translationlib.service"
 dependencies {
     implementation(project(":common"))
     implementation(libs.slf4j.simple)
-    implementation(libs.mongo.driver)
+    implementation(libs.sqlite.driver)
     implementation(libs.javalin)
     implementation(libs.avaje.inject)
 

@@ -1,24 +1,19 @@
 package eu.mizerak.alemiz.translationlib.service.repository;
 
 import com.google.gson.Gson;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.ReplaceOptions;
-import com.mongodb.client.model.UpdateOptions;
+import com.google.gson.reflect.TypeToken;
 import eu.mizerak.alemiz.translationlib.common.structure.TranslationTerm;
+import eu.mizerak.alemiz.translationlib.service.utils.Configuration;
+import io.avaje.inject.PostConstruct;
+import io.avaje.inject.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.lang.reflect.Type;
+import java.sql.*;
+import java.util.*;
 
 @Slf4j
 @Singleton
@@ -26,55 +21,139 @@ public class TermsRepository {
     public static final String COLLECTION = "terms";
 
     @Inject
-    MongoDatabase database;
+    Configuration config;
 
     @Inject
     Gson gson;
 
+    Connection connection;
+
+    @PostConstruct
+    void onStartup() {
+        try {
+            Class.forName("org.sqlite.JDBC");
+            this.connection = DriverManager.getConnection("jdbc:sqlite:" + this.config.getTermsDatabase());
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to open connection to SQLite database", e);
+        }
+
+        try (Statement statement = this.connection.createStatement()) {
+            statement.execute("CREATE TABLE IF NOT EXISTS `terms` (`key` varchar(200) NOT NULL PRIMARY KEY, `internal_id` varchar(200) DEFAULT NULL, " +
+                    "`tags` MEDIUMTEXT DEFAULT NULL, `translations` LONGTEXT NOT NULL);");
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to init terms database");
+        }
+    }
+
+    @PreDestroy
+    void onShutdown() throws SQLException {
+        if (this.connection != null) {
+            this.connection.close();
+        }
+    }
+
     public void addTerm(@NotNull TranslationTerm term) {
-        Bson filter = Filters.eq("key", term.getKey());
-        this.database.getCollection(COLLECTION).replaceOne(filter, createDocument(term),
-                new ReplaceOptions().upsert(true));
+        try {
+            if (this.isTermCreated(term.getKey())) {
+                this.updateTerm(term);
+            } else {
+                this.insertTerm(term);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to update translation term " + term.getKey(), e);
+        }
+    }
+
+    private void updateTerm(@NotNull TranslationTerm term) throws SQLException {
+        try (PreparedStatement statement = this.connection.prepareStatement("UPDATE `terms` SET `internal_id` = ?, `tags` = ?, `translations` = ? WHERE `key` = ?")) {
+            if (term.getInternalId() == null || term.getInternalId().trim().isEmpty()) {
+                statement.setNull(1, Types.NULL);
+            } else {
+                statement.setString(1, term.getInternalId());
+            }
+
+            if (term.getTags() == null || term.getTags().isEmpty()) {
+                statement.setNull(2, Types.NULL);
+            } else {
+                statement.setString(2, String.join(",", term.getTags()));
+            }
+            statement.setString(3, gson.toJson(term.getTranslations()));
+            statement.setString(4, term.getKey());
+
+            statement.execute();
+        }
+    }
+
+    private void insertTerm(@NotNull TranslationTerm term) throws SQLException {
+        try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO `terms` (`key`, `internal_id`, `tags`, `translations`) VALUES (?, ?, ?, ?);")) {
+            statement.setString(1, term.getKey());
+            if (term.getInternalId() == null || term.getInternalId().trim().isEmpty()) {
+                statement.setNull(2, Types.NULL);
+            } else {
+                statement.setString(2, term.getInternalId());
+            }
+
+            if (term.getTags() == null || term.getTags().isEmpty()) {
+                statement.setNull(3, Types.NULL);
+            } else {
+                statement.setString(3, String.join(",", term.getTags()));
+            }
+            statement.setString(4, gson.toJson(term.getTranslations()));
+
+            statement.execute();
+        }
     }
 
     public void addTerms(Collection<TranslationTerm> terms) {
-        List<Document> documents = new ArrayList<>();
         for (TranslationTerm term : terms) {
-            documents.add(createDocument(term));
+            this.addTerm(term);
         }
-        this.database.getCollection(COLLECTION).insertMany(documents);
     }
 
     public void removeTerm(@NotNull TranslationTerm term) {
-        this.database.getCollection(COLLECTION).deleteOne(Filters.eq("key", term.getKey()));
-    }
-
-    public boolean isTermCreated(@NotNull System key) {
-        return this.database.getCollection(COLLECTION).countDocuments(Filters.eq("key", key)) > 1;
-    }
-
-    public Collection<TranslationTerm> getAllTerms(@Nullable Bson filter) {
-        FindIterable<Document> documents;
-        if (filter == null) {
-            documents = this.database.getCollection(COLLECTION).find();
-        } else {
-            documents = this.database.getCollection(COLLECTION).find(filter);
+        try (PreparedStatement statement = this.connection.prepareStatement("DELETE FROM `terms` WHERE `key` = ?;")) {
+            statement.setString(1, term.getKey());
+            statement.execute();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to delete term " + term.getKey(), e);
         }
+    }
 
-        List<TranslationTerm> terms = new ArrayList<>();
-        try (MongoCursor<Document> cursor = documents.cursor()) {
-            while (cursor.hasNext()) {
-                terms.add(createTerm(cursor.next()));
+    public boolean isTermCreated(@NotNull String key) {
+        try (PreparedStatement queryStatement = this.connection.prepareStatement("SELECT `key` FROM `terms` WHERE `key` = ?")) {
+            queryStatement.setString(1, key);
+            try (ResultSet query = queryStatement.executeQuery()) {
+                return query.getRow() > 0;
             }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable check if term exists " + key, e);
         }
-        return terms;
     }
 
-    private Document createDocument(TranslationTerm term) {
-        return Document.parse(gson.toJson(term));
-    }
+    public Collection<TranslationTerm> getAllTerms() {
+        try (Statement statement = this.connection.createStatement()) {
+            try (ResultSet resultSet = statement.executeQuery("SELECT * FROM `terms`;")) {
+                List<TranslationTerm> terms = new ArrayList<>();
+                while (resultSet.next()) {
+                    TranslationTerm term = new TranslationTerm();
+                    term.setKey(resultSet.getString("key"));
+                    term.setInternalId(resultSet.getString("internal_id"));
 
-    private TranslationTerm createTerm(Document document) {
-        return gson.fromJson(document.toJson(), TranslationTerm.class);
+                    String tags = resultSet.getString("tags");
+                    if (tags != null && !tags.trim().isEmpty()) {
+                        term.getTags().addAll(Arrays.asList(tags.split(",")));
+                    }
+
+                    String translations = resultSet.getString("translations");
+                    Type type = new TypeToken<Map<Locale, String>>(){}.getType();
+                    term.getTranslations().putAll(gson.fromJson(translations, type));
+
+                    terms.add(term);
+                }
+                return terms;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to load terms from database", e);
+        }
     }
 }

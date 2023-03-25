@@ -27,7 +27,7 @@ public class TermsManager {
     private final Map<String, TermsGroup> groups = new ConcurrentHashMap<>();
 
     public void onInit() {
-        Collection<TranslationTerm> terms = this.repository.getAllTerms(null);
+        Collection<TranslationTerm> terms = this.repository.getAllTerms();
         for (TranslationTerm term : terms) {
             this.terms.put(term.getKey(), term);
             for (String tag : term.getTags()) {

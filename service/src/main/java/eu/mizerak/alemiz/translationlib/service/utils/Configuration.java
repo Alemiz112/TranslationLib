@@ -13,9 +13,7 @@ public class Configuration {
     private String httpHost;
     private int httpPort;
 
-    private String mongoUrl;
-    private String mongoDatabase;
-    private int maxMongoPoolSize;
+    private String termsDatabase;
 
     private List<String> accessTokens;
 
@@ -25,11 +23,9 @@ public class Configuration {
         return Configuration.builder()
                 .properties(properties)
                 .httpHost(parseValue("http.host", properties))
+                .termsDatabase(parseValue("termsdb-file", properties))
                 .httpPort(Integer.parseInt(parseValue("http.port", properties)))
-                .mongoUrl(parseValue("mongodb.connection-string", properties))
-                .mongoDatabase(parseValue("mongodb.database", properties))
-                .maxMongoPoolSize(Integer.parseInt(parseValue("mongodb.max-pool-size", properties)))
-                .accessTokens(Collections.unmodifiableList(Arrays.asList(parseValue("service.access-tokens", properties).split(","))))
+                .accessTokens(List.of(parseValue("service.access-tokens", properties).split(",")))
                 .scrapperName(parseValue("scrapper.name", properties))
                 .build();
     }

@@ -3,11 +3,6 @@ package eu.mizerak.alemiz.translationlib.service;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoDatabase;
 import eu.mizerak.alemiz.translationlib.common.gson.LocaleSerializer;
 import eu.mizerak.alemiz.translationlib.common.structure.RestStatus;
 import eu.mizerak.alemiz.translationlib.service.access.AccessRole;
@@ -79,26 +74,11 @@ public class TranslationLibService {
     private final Javalin server;
     private final Gson gson;
 
-    private final MongoClient mongoClient;
-    private final MongoDatabase mongoDatabase;
-
     private final TranslationDataScrapper scrapper;
     private final TermsManager termsManager;
 
     public TranslationLibService(Configuration configuration) {
         this.configuration = configuration;
-
-        MongoClientSettings settings = MongoClientSettings.builder()
-                .applyConnectionString(new ConnectionString(configuration.getMongoUrl()))
-                .applyToConnectionPoolSettings(builder -> builder
-                        .minSize(2)
-                        .maxSize(configuration.getMaxMongoPoolSize()))
-                .applyToSocketSettings(builder -> builder
-                        .connectTimeout(10, TimeUnit.SECONDS)
-                        .readTimeout(10, TimeUnit.SECONDS))
-                .build();
-        this.mongoClient = MongoClients.create(settings);
-        this.mongoDatabase = mongoClient.getDatabase(configuration.getMongoDatabase());
 
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(Locale.class, new LocaleSerializer())
@@ -110,8 +90,6 @@ public class TranslationLibService {
         BeanScope scope = BeanScope.builder()
                 .bean(TranslationLibService.class, this)
                 .bean(Configuration.class, configuration)
-                .bean(MongoClient.class, this.mongoClient)
-                .bean(MongoDatabase.class, this.mongoDatabase)
                 .bean(Gson.class, this.gson)
                 .build();
 

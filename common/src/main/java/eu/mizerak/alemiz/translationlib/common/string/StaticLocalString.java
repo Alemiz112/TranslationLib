@@ -4,6 +4,9 @@ import eu.mizerak.alemiz.translationlib.common.structure.TranslationTerm;
 
 import java.util.Locale;
 
+/**
+ * A implementation of a LocalString, which does support formatting, but does not support translations.
+ */
 public class StaticLocalString<T> extends LocalStringBase<T> {
     public static final Locale DEFAULT_LOCALE = Locale.ENGLISH;
 

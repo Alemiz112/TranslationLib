@@ -24,4 +24,4 @@ avaje-inject-generator = { module = "io.avaje:avaje-inject-generator", version.r
 # Other dependencies
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 gson = { module = "com.google.code.gson:gson", version = "2.10.1" }
-mongo-driver = { module = "org.mongodb:mongodb-driver-sync", version = "4.7.0" }
+sqlite-driver = { module = "org.xerial:sqlite-jdbc", version = "3.41.2.0" }
