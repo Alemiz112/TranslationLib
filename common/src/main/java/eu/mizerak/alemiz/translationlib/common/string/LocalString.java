@@ -42,6 +42,10 @@ public interface LocalString<T> {
         return (LocalString<T>) StringWrapper.EMPTY;
     }
 
+    static <T> PreparedLocalString<T> prepared(LocalString<T> string) {
+        return new PreparedLocalString<>(string);
+    }
+
     String getKey();
 
     LocalString<T> reload();
@@ -78,5 +82,9 @@ public interface LocalString<T> {
 
     default LocalString<T> append(LocalString<T> string, String delimiter) {
         return new JoinLocalString<>(this, string, delimiter);
+    }
+
+    default PreparedLocalString<T> prepared() {
+        return prepared(this);
     }
 }
