@@ -28,6 +28,16 @@ public abstract class LocalStringBase<T> implements LocalString<T> {
         contextFactories.remove(clazz);
     }
 
+    public static <T> TranslationContext.Factory<T> getContextFactory(Class<T> clazz) {
+        TranslationContext.Factory<?> factory = contextFactories.get(clazz);
+        if (factory == null) {
+            factory = contextFactories.get(clazz.getSuperclass());
+            if (factory == null) {
+                throw new IllegalStateException("Unregistered factory for type " + clazz);
+            }
+        }
+        return (TranslationContext.Factory<T>) factory;
+    }
 
     private final String key;
 
@@ -65,15 +75,7 @@ public abstract class LocalStringBase<T> implements LocalString<T> {
 
     @Override
     public String getText(T object, Consumer<TranslationContext<T>> handler) {
-        TranslationContext.Factory<?> factory = contextFactories.get(object.getClass());
-        if (factory == null) {
-            factory = contextFactories.get(object.getClass().getSuperclass());
-            if (factory == null) {
-                throw new IllegalStateException("Unregistered factory for type " + object.getClass());
-            }
-        }
-
-        TranslationContext<T> ctx = ((TranslationContext.Factory<T>) factory).create(object);
+        TranslationContext<T> ctx = ((TranslationContext.Factory<T>) getContextFactory(object.getClass())).create(object);
         if (handler != null) {
             handler.accept(ctx);
         }

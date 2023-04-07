@@ -1,6 +1,7 @@
 package eu.mizerak.alemiz.translationlib.common;
 
 import eu.mizerak.alemiz.translationlib.common.string.LocalString;
+import eu.mizerak.alemiz.translationlib.common.string.PreparedLocalString;
 import eu.mizerak.alemiz.translationlib.common.structure.SimpleColorFormatter;
 import eu.mizerak.alemiz.translationlib.common.structure.TranslationTerm;
 import eu.mizerak.alemiz.translationlib.common.structure.User;
@@ -62,5 +63,17 @@ public class TranslateTest extends TestBase {
 
         String text = string.append(string2).getText(User.ENGLISH);
         assertEquals("Hello " + User.ENGLISH.getName() + " this is test", text);
+    }
+
+    @Test
+    public void testPreparedString() {
+        LocalString<User> string = LocalString.from("test_string5", "Hello its {day}");
+
+        PreparedLocalString<User> prepared = LocalString.prepared(string)
+                .withArgument("day", "Monday");
+
+        String text = prepared.getText(User.ENGLISH);
+        assertEquals("Hello its Monday", text);
+
     }
 }

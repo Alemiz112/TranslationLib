@@ -5,6 +5,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static eu.mizerak.alemiz.translationlib.common.string.LocalStringBase.getContextFactory;
+
 public class PreparedLocalString<T> implements LocalString<T> {
 
     private final LocalStringBase<T> string;
@@ -76,7 +78,7 @@ public class PreparedLocalString<T> implements LocalString<T> {
         String formatted = this.string.getFormatted(locale);
         if (this.arguments != null) {
             for (Map.Entry<String, Object> entry : this.arguments.entrySet()) {
-                formatted = formatted.replace("\\{" + entry.getKey() + "\\}", String.valueOf(entry.getValue()));
+                formatted = formatted.replaceAll("\\{" + entry.getKey() + "\\}", String.valueOf(entry.getValue()));
             }
         }
 
@@ -87,6 +89,8 @@ public class PreparedLocalString<T> implements LocalString<T> {
 
     @Override
     public String getText(T object, Consumer<TranslationContext<T>> handler) {
+        TranslationContext<T> ctx = ((TranslationContext.Factory<T>) getContextFactory(object.getClass())).create(object);
+        this.getFormatted(ctx.getLocale()); // cache locale
         return this.string.getText(object, handler);
     }
 
