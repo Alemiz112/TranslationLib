@@ -11,7 +11,7 @@ public class PreparedLocalString<T> implements LocalString<T> {
 
     private final LocalStringBase<T> string;
     private Map<String, Object> arguments;
-    protected final Set<Locale> formatted = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    protected final Map<Locale, String> formatted = new ConcurrentHashMap<>();
 
     protected PreparedLocalString(LocalString<T> string) {
         if (!(string instanceof LocalStringBase)) {
@@ -71,27 +71,38 @@ public class PreparedLocalString<T> implements LocalString<T> {
 
     @Override
     public String getFormatted(Locale locale) {
-        if (this.formatted.contains(locale)) {
-            return this.string.getFormatted(locale);
+        String formatted = this.formatted.get(locale);
+        if (formatted != null) {
+            return formatted;
         }
 
-        String formatted = this.string.getFormatted(locale);
+        String text = this.string.getFormatted(locale);
+
         if (this.arguments != null) {
             for (Map.Entry<String, Object> entry : this.arguments.entrySet()) {
-                formatted = formatted.replaceAll("\\{" + entry.getKey() + "\\}", String.valueOf(entry.getValue()));
+                text = text.replaceAll("\\{" + entry.getKey() + "\\}", String.valueOf(entry.getValue()));
             }
         }
 
-        this.formatted.add(locale);
-        this.string.setFormatted(locale, formatted);
-        return formatted;
+        this.formatted.put(locale, text);
+        return text;
     }
 
     @Override
     public String getText(T object, Consumer<TranslationContext<T>> handler) {
         TranslationContext<T> ctx = ((TranslationContext.Factory<T>) getContextFactory(object.getClass())).create(object);
-        this.getFormatted(ctx.getLocale()); // cache locale
-        return this.string.getText(object, handler);
+        if (handler != null) {
+            handler.accept(ctx);
+        }
+
+        String formatted = this.getFormatted(ctx.getLocale());
+
+        if (!this.string.arguments.isEmpty()) {
+            for (Map.Entry<String, Function<TranslationContext<T>, String>> entry : this.string.arguments.entrySet()) {
+                formatted = formatted.replaceAll("\\{" + entry.getKey() + "\\}", entry.getValue().apply(ctx));
+            }
+        }
+        return ctx.handlePostFormat(formatted);
     }
 
     @Override

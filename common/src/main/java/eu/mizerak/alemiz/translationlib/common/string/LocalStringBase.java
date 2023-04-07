@@ -105,11 +105,6 @@ public abstract class LocalStringBase<T> implements LocalString<T> {
         return formatted;
     }
 
-    public LocalStringBase<T> setFormatted(Locale locale, String formatted) {
-        this.formatted.put(locale, formatted);
-        return this;
-    }
-
     private String format(String text) {
         for (FormatterHandler formatter : formatters.values()) {
             text = formatter.format(text);

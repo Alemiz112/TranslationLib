@@ -67,13 +67,17 @@ public class TranslateTest extends TestBase {
 
     @Test
     public void testPreparedString() {
-        LocalString<User> string = LocalString.from("test_string5", "Hello its {day}");
+        LocalString<User> string = LocalString.<User>from("test_string5", "Hello {user} it is {day}! {tip}")
+                .withArgument("tip", "No tip today!")
+                .withArgument("user", ctx -> ctx.getObject().getName());
 
         PreparedLocalString<User> prepared = LocalString.prepared(string)
                 .withArgument("day", "Monday");
 
-        String text = prepared.getText(User.ENGLISH);
-        assertEquals("Hello its Monday", text);
+        assertEquals("Hello " + User.ENGLISH.getName() + " it is Monday! No tip today!", prepared.getText(User.ENGLISH));
 
+        PreparedLocalString<User> prepared2 = LocalString.prepared(string)
+                .withArgument("day", "Tuesday");
+        assertEquals("Hello " + User.ENGLISH.getName() + " it is Tuesday! No tip today!", prepared2.getText(User.ENGLISH));
     }
 }
