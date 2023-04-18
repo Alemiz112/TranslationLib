@@ -46,6 +46,12 @@ public class PreparedLocalString<T> implements LocalString<T> {
         return this;
     }
 
+    @Override
+    public LocalString<T> withArgument(String name, LocalString<T> string) {
+        this.withArgument(name, (Object) string);
+        return this;
+    }
+
     @Deprecated
     @Override
     public PreparedLocalString<T> withArgument(String name, Function<TranslationContext<T>, String> function) {
@@ -80,7 +86,11 @@ public class PreparedLocalString<T> implements LocalString<T> {
 
         if (this.arguments != null) {
             for (Map.Entry<String, Object> entry : this.arguments.entrySet()) {
-                text = text.replaceAll("\\{" + entry.getKey() + "\\}", String.valueOf(entry.getValue()));
+                if (entry.getValue() instanceof LocalString) {
+                    text = text.replaceAll("\\{" + entry.getKey() + "\\}", ((LocalString<?>) entry.getValue()).getFormatted(locale));
+                } else {
+                    text = text.replaceAll("\\{" + entry.getKey() + "\\}", String.valueOf(entry.getValue()));
+                }
             }
         }
 

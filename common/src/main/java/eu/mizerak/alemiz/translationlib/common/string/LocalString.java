@@ -56,6 +56,10 @@ public interface LocalString<T> {
         return this.withArgument(name, ctx -> String.valueOf(argument));
     }
 
+    default LocalString<T> withArgument(String name, LocalString<T> string) {
+        return this.withArgument(name, ctx -> string.getText(ctx.getObject()));
+    }
+
     LocalString<T> withArgument(String name, Function<TranslationContext<T>, String> mapper);
 
     LocalString<T> clearArguments();

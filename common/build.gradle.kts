@@ -28,6 +28,10 @@ tasks.test {
     useJUnitPlatform()
 }
 
+tasks.compileJava {
+   dependsOn(tasks.clean)
+}
+
 publishing {
     publications {
         create<MavenPublication>("library") {

@@ -7,6 +7,7 @@ import java.util.Locale;
 @Data
 public class User {
     public static final User ENGLISH = new User("english_user", Locale.ENGLISH);
+    public static final User ENGLISH_2 = new User("english_user2", Locale.ENGLISH);
     public static final User FRENCH = new User("french_user", Locale.FRENCH);
 
     private final String name;

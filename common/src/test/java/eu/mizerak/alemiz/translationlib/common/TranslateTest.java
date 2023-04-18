@@ -80,4 +80,20 @@ public class TranslateTest extends TestBase {
                 .withArgument("day", "Tuesday");
         assertEquals("Hello " + User.ENGLISH.getName() + " it is Tuesday! No tip today!", prepared2.getText(User.ENGLISH));
     }
+
+    @Test
+    public void testLocalStringArguments() {
+        LocalString<User> day = LocalString.wrapper("Monday {user}");
+        
+        LocalString<User> string = LocalString.<User>from("test_string6", "Hello {user}! Today is {day}!")
+                .withArgument("user", ctx -> ctx.getObject().getName())
+                .prepared()
+                .withArgument("day", day);
+
+        String text = string.getText(User.ENGLISH);
+        assertEquals("Hello " + User.ENGLISH.getName() + "! Today is Monday " + User.ENGLISH.getName() + "!", text);
+
+        String text2 = string.getText(User.ENGLISH_2);
+        assertEquals("Hello " + User.ENGLISH_2.getName() + "! Today is Monday " + User.ENGLISH_2.getName() + "!", text2);
+    }
 }
