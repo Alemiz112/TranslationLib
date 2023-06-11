@@ -41,6 +41,7 @@ public class TranslationLibLoader {
 
     private final Map<String, TranslationTerm> translationTerms = new ConcurrentHashMap<>();
     private final Set<LocalString<?>> activeStrings = Collections.synchronizedSet(new HashSet<>());
+    private final Map<String, LocalString<?>> activeStringsMap = new ConcurrentHashMap<>();
     private final Set<String> loadedTags = Collections.synchronizedSet(new HashSet<>());
     private final Set<TranslationTerm> updateQueue = Collections.synchronizedSet(new HashSet<>());
 
@@ -130,16 +131,34 @@ public class TranslationLibLoader {
 
     public void onStringSubscribe(LocalString<?> string) {
         this.activeStrings.add(string);
+        this.activeStringsMap.putIfAbsent(string.getKey(), string);
     }
 
     public void onStringUnsubscribe(LocalString<?> string) {
         this.activeStrings.remove(string);
+
+        LocalString<?> localString = this.activeStringsMap.get(string.getKey());
+        if (localString == string) {
+            this.activeStringsMap.remove(string.getKey());
+        }
     }
 
     public void shutdown() {
         if (this.refreshFuture != null) {
             this.refreshFuture.cancel(false);
         }
+    }
+
+    public <T> LocalString<T> getLocalString(Class<T> clazz, String key) {
+        return this.getLocalString(clazz, key, "Default text placeholder");
+    }
+
+    public <T> LocalString<T> getLocalString(Class<T> clazz, String key, String defaultText) {
+        LocalString<?> string = this.activeStringsMap.get(key);
+        if (string != null) {
+            return (LocalString<T>) string;
+        }
+        return LocalString.from(key, defaultText, this);
     }
 
     public TranslationTerm getTranslationterm(String key) {

@@ -84,7 +84,7 @@ public class TranslateTest extends TestBase {
     @Test
     public void testLocalStringArguments() {
         LocalString<User> day = LocalString.wrapper("Monday {user}");
-        
+
         LocalString<User> string = LocalString.<User>from("test_string6", "Hello {user}! Today is {day}!")
                 .withArgument("user", ctx -> ctx.getObject().getName())
                 .prepared()
