@@ -24,6 +24,12 @@ public interface LocalString<T> {
                 throw new IllegalStateException("Term " + key + " has no default translation");
             }
         }
+
+        LocalString<Object> cached = loader.getLocalString(null, key);
+        if (cached != null) {
+            return (LocalString<T>) cached;
+        }
+
         LocalStringBase<T> string = new LocalStringImpl<>(key, term, loader, defaultText);
         string.enableReload(true);
         return string;
