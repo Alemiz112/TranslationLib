@@ -14,6 +14,15 @@ public interface LocalString<T> {
     }
 
     static <T> LocalString<T> from(String key, String defaultText, TranslationLibLoader loader) {
+        return from(key, defaultText, loader, true);
+    }
+
+    static <T> LocalString<T> from(String key, String defaultText, TranslationLibLoader loader, boolean cache) {
+        LocalString<Object> cached;
+        if (cache && (cached = loader.getLocalString(null, key)) != null) {
+            return (LocalString<T>) cached;
+        }
+
         TranslationTerm term = loader.getTranslationterm(key);
         if (term == null) {
             term = TranslationTerm.createEmpty(key, defaultText, loader.getDefaultLocale());
@@ -23,11 +32,6 @@ public interface LocalString<T> {
             if (text == null) {
                 throw new IllegalStateException("Term " + key + " has no default translation");
             }
-        }
-
-        LocalString<Object> cached = loader.getLocalString(null, key);
-        if (cached != null) {
-            return (LocalString<T>) cached;
         }
 
         LocalStringBase<T> string = new LocalStringImpl<>(key, term, loader, defaultText);

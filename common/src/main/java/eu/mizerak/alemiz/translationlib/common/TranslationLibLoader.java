@@ -158,7 +158,7 @@ public class TranslationLibLoader {
         if (string != null) {
             return (LocalString<T>) string;
         }
-        return LocalString.from(key, defaultText, this);
+        return LocalString.from(key, defaultText, this, false);
     }
 
     public TranslationTerm getTranslationterm(String key) {
