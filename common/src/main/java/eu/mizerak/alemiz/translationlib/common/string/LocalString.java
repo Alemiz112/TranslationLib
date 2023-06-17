@@ -19,7 +19,7 @@ public interface LocalString<T> {
 
     static <T> LocalString<T> from(String key, String defaultText, TranslationLibLoader loader, boolean cache) {
         LocalString<Object> cached;
-        if (cache && (cached = loader.getLocalString(null, key)) != null) {
+        if (cache && (cached = loader.getLocalString(null, key, defaultText)) != null) {
             return (LocalString<T>) cached;
         }
 
